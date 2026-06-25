@@ -26,9 +26,9 @@ with an efficient hardware-aware design and implementation in the spirit of [Fla
 ## Installation
 
 Install PyTorch first, then:
-- [Option] `pip install causal-conv1d>=1.4.0 --no-build-isolation`: an efficient implementation of a simple causal Conv1d layer used inside the Mamba block.
+- [Option] `pip install "causal-conv1d>=1.4.0" --no-build-isolation`: an efficient implementation of a simple causal Conv1d layer used inside the Mamba block.
 - `pip install mamba-ssm --no-build-isolation`: the core Mamba package.
-- `pip install mamba-ssm[causal-conv1d] --no-build-isolation`: To install core Mamba package and causal-conv1d.
+- `pip install "mamba-ssm[causal-conv1d]" --no-build-isolation`: To install core Mamba package and causal-conv1d.
 
 `--no-build-isolation` is required so that pip uses your existing CUDA-enabled PyTorch instead of installing torch-cpu in an isolated build environment.
 
