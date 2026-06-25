@@ -17,7 +17,25 @@ except ImportError:
 
 from mamba_ssm.ops.triton.layer_norm import _layer_norm_fwd
 
-import selective_scan_cuda
+try:
+    import selective_scan_cuda
+except ImportError:
+    # Built with MAMBA_SKIP_CUDA_BUILD=TRUE (or no CUDA toolkit at build time).
+    # The legacy Mamba-1 selective_scan_cuda kernel is unavailable, but the rest
+    # of the package (Mamba-2 / Mamba-3, which use Triton/TileLang) still works.
+    selective_scan_cuda = None
+
+
+def _ensure_selective_scan_cuda():
+    if selective_scan_cuda is None:
+        raise ImportError(
+            "The `selective_scan_cuda` kernel is not available. It powers the "
+            "legacy Mamba-1 CUDA path used by `selective_scan_fn`/`mamba_inner_fn`. "
+            "Reinstall mamba-ssm with the CUDA extension compiled (do NOT set "
+            "MAMBA_SKIP_CUDA_BUILD=TRUE, and make sure your CUDA toolkit's major "
+            "version matches your PyTorch build). Mamba-2 and Mamba-3 do not need "
+            "this kernel."
+        )
 
 
 class SelectiveScanFn(torch.autograd.Function):
@@ -25,6 +43,7 @@ class SelectiveScanFn(torch.autograd.Function):
     @staticmethod
     def forward(ctx, u, delta, A, B, C, D=None, z=None, delta_bias=None, delta_softplus=False,
                 return_last_state=False):
+        _ensure_selective_scan_cuda()
         if u.stride(-1) != 1:
             u = u.contiguous()
         if delta.stride(-1) != 1:
@@ -192,6 +211,7 @@ class MambaInnerFn(torch.autograd.Function):
         """
              xz: (batch, dim, seqlen)
         """
+        _ensure_selective_scan_cuda()
         assert causal_conv1d_fwd_function is not None, "causal_conv1d_cuda is not available. Please install causal-conv1d."
         assert checkpoint_lvl in [0, 1]
         L = xz.shape[-1]
